@@ -7,13 +7,24 @@ import {apiUrl, uploadUrl} from './variables';
 // PWA code
 
 // select forms from the DOM
-const loginForm = document.querySelector('#login-form');
-const profileForm = document.querySelector('#profile-form');
-const avatarForm = document.querySelector('#avatar-form') as HTMLFormElement;
+const loginForm = document.querySelector(
+  '#login-form'
+) as HTMLFormElement | null;
+const profileForm = document.querySelector(
+  '#profile-form'
+) as HTMLFormElement | null;
+const avatarForm = document.querySelector(
+  '#avatar-form'
+) as HTMLFormElement | null;
 
 // select inputs from the DOM
-const usernameInput = document.querySelector('#username') as HTMLInputElement;
-const passwordInput = document.querySelector('#password') as HTMLInputElement;
+const usernameInput = document.querySelector(
+  '#username'
+) as HTMLInputElement | null;
+
+const passwordInput = document.querySelector(
+  '#password'
+) as HTMLFormElement | null;
 
 const profileUsernameInput = document.querySelector(
   '#profile-username'
@@ -22,17 +33,21 @@ const profileEmailInput = document.querySelector(
   '#profile-email'
 ) as HTMLInputElement | null;
 
-const avatarInput = document.querySelector('#avatar') as HTMLInputElement;
+// const avatarInput = document.querySelector('#avatar') as HTMLInputElement;
 
 // select profile elements from the DOM
-const usernameTarget = document.querySelector('#username-target');
-const emailTarget = document.querySelector('#email-target');
+const usernameTarget = document.querySelector(
+  '#username-target'
+) as HTMLFormElement | null;
+const emailTarget = document.querySelector(
+  '#email-target'
+) as HTMLFormElement | null;
 const avatarTarget = document.querySelector(
   '#avatar-target'
 ) as HTMLImageElement | null;
 
 // TODO: function to login
-const login = async (): Promise<LoginUser | null> => {
+const login = async (): Promise<LoginUser> => {
   if (!passwordInput || !usernameInput) {
     throw new Error('No elements availaible');
   }
@@ -66,9 +81,9 @@ const updateUserData = async (
   user: UpdateUser,
   token: string
 ): Promise<UpdateResult> => {
-  if (!profileUsernameInput || !profileEmailInput) {
-    throw new Error('Ei ole elementtejä');
-  }
+  // if (!profileUsernameInput || !profileEmailInput) {
+  //   throw new Error('Ei ole elementtejä');
+  // }
 
   const options: RequestInit = {
     method: 'PUT',
@@ -88,17 +103,32 @@ const addUserDataToDom = (user: User): void => {
   if (!emailTarget || !usernameTarget || !avatarTarget) {
     throw new Error('No elements availaible');
   }
-  emailTarget.innerHTML = user.email;
-  usernameTarget.innerHTML = user.username;
+  emailTarget.innerText = user.email;
+  usernameTarget.innerText = user.username;
   avatarTarget.src = uploadUrl + user.avatar;
 };
 
 // function to get userdata from API using token
-// const getUserData = async (token: string): Promise<User> => {};
+const getUserData = async (token: string): Promise<User> => {
+  const options: RequestInit = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+  return await fetchData<User>(apiUrl + '/users/token', options);
+};
 
 // TODO: function to check local storage for token and if it exists fetch
 // userdata with getUserData then update the DOM with addUserDataToDom
-const checkToken = async (): Promise<void> => {};
+const checkToken = async (): Promise<void> => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.log('nöy töyken');
+    return;
+  }
+  const user = await getUserData(token);
+  addUserDataToDom(user);
+};
 
 // call checkToken on page load to check if token exists and update the DOM
 checkToken();
@@ -169,7 +199,7 @@ avatarForm?.addEventListener('submit', async (e) => {
     },
     body: fd,
   };
-  const UploadResult = await fetchData<UpdateResult>(
+  const UploadResult = await fetchData<UploadResult>(
     apiUrl + '/users/avatar',
     options
   );
