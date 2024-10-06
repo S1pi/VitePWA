@@ -1,6 +1,6 @@
 import {fetchData} from './functions';
 import {UpdateResult} from './interfaces/UpdateResult';
-// import {UploadResult} from './interfaces/UploadResult';
+import {UploadResult} from './interfaces/UploadResult';
 import {LoginUser, UpdateUser, User} from './interfaces/User';
 import {apiUrl, uploadUrl} from './variables';
 
@@ -8,21 +8,21 @@ import {apiUrl, uploadUrl} from './variables';
 
 // select forms from the DOM
 const loginForm = document.querySelector('#login-form');
-// const profileForm = document.querySelector('#profile-form');
+const profileForm = document.querySelector('#profile-form');
 const avatarForm = document.querySelector('#avatar-form') as HTMLFormElement;
 
 // select inputs from the DOM
 const usernameInput = document.querySelector('#username') as HTMLInputElement;
 const passwordInput = document.querySelector('#password') as HTMLInputElement;
 
-// const profileUsernameInput = document.querySelector(
-//   '#profile-username'
-// ) as HTMLInputElement;
-// const profileEmailInput = document.querySelector(
-//   '#profile-email'
-// ) as HTMLInputElement | null;
+const profileUsernameInput = document.querySelector(
+  '#profile-username'
+) as HTMLInputElement;
+const profileEmailInput = document.querySelector(
+  '#profile-email'
+) as HTMLInputElement | null;
 
-// const avatarInput = document.querySelector('#avatar') as HTMLInputElement;
+const avatarInput = document.querySelector('#avatar') as HTMLInputElement;
 
 // select profile elements from the DOM
 const usernameTarget = document.querySelector('#username-target');
@@ -62,17 +62,25 @@ const login = async (): Promise<LoginUser | null> => {
 };
 
 // TODO: function to update user data
-// const updateUserData = async (
-//   user: UpdateUser,
-//   token: string
-// ): Promise<UpdateResult> => {
-//   const options: RequestInit = {
-//     method: 'PUT',
-//     headers: {
-//       Authorization: `Bearer ${token}`,
-//     },
-//   };
-// };
+const updateUserData = async (
+  user: UpdateUser,
+  token: string
+): Promise<UpdateResult> => {
+  if (!profileUsernameInput || !profileEmailInput) {
+    throw new Error('Ei ole elementtejä');
+  }
+
+  const options: RequestInit = {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(user),
+  };
+
+  return await fetchData<UpdateResult>(apiUrl + '/users', options);
+};
 
 // TODO: function to add userdata (email, username and avatar image) to the
 // Profile DOM and Edit Profile Form
@@ -98,23 +106,54 @@ checkToken();
 // TODO: login form event listener
 // event listener should call login function and save token to local storage
 // then call addUserDataToDom to update the DOM with the user data
-loginForm?.addEventListener('submit', async (e) => {
-  try {
-    e.preventDefault();
-    const loginRes = await login();
-    if (loginRes) {
-      console.log(loginRes);
-      localStorage.setItem('token', loginRes.token);
-      addUserDataToDom(loginRes.data);
-    }
-  } catch (err) {
-    console.log((err as Error).message);
-  }
-});
+
+loginForm
+  ? loginForm.addEventListener('submit', async (e) => {
+      try {
+        e.preventDefault();
+        const loginRes = await login();
+        if (loginRes) {
+          console.log(loginRes);
+          localStorage.setItem('token', loginRes.token);
+          addUserDataToDom(loginRes.data);
+        }
+      } catch (err) {
+        console.log((err as Error).message);
+      }
+    })
+  : console.log('Its not there');
 
 // TODO: profile form event listener
 // event listener should call updateUserData function and update the DOM with
 // the user data by calling addUserDataToDom or checkToken
+
+profileForm
+  ? profileForm.addEventListener('submit', async (e) => {
+      try {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        if (!token) {
+          alert('pliis login');
+          return;
+        }
+        if (!profileUsernameInput || !profileEmailInput) {
+          throw new Error('Ei ole elementtejä');
+        }
+        const username = profileUsernameInput.value;
+        const email = profileEmailInput.value;
+
+        const data = {
+          username,
+          email,
+        };
+        const userResponse = await updateUserData(data, token);
+        addUserDataToDom(userResponse.data);
+        alert('Update OK');
+      } catch (error) {
+        console.log((error as Error).message);
+      }
+    })
+  : console.log('Profileform not here');
 
 // TODO: avatar form event listener
 // event listener should call uploadAvatar function and update the DOM with
